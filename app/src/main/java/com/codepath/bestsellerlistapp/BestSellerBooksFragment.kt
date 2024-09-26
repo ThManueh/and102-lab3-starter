@@ -1,6 +1,7 @@
 package com.codepath.bestsellerlistapp
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,12 +10,16 @@ import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.codepath.bestsellerlistapp.R
+import com.codepath.asynchttpclient.AsyncHttpClient
+import com.codepath.asynchttpclient.RequestParams
+import com.codepath.asynchttpclient.callback.JsonHttpResponseHandler
+import com.google.gson.Gson
+import okhttp3.Headers
 
 // --------------------------------//
 // CHANGE THIS TO BE YOUR API KEY  //
 // --------------------------------//
-private const val API_KEY = "<YOUR-API-KEY-HERE>"
+private const val API_KEY = "kvC9B6jU08F4ifQtrnMWP2XHGDGwVpez"
 
 /*
  * The class for the only fragment in the app, which contains the progress bar,
@@ -23,7 +28,7 @@ private const val API_KEY = "<YOUR-API-KEY-HERE>"
 class BestSellerBooksFragment : Fragment(), OnListFragmentInteractionListener {
 
     /*
-     * Constructing the view
+     * Constructwing the view
      */
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -46,53 +51,65 @@ class BestSellerBooksFragment : Fragment(), OnListFragmentInteractionListener {
         progressBar.show()
 
         // Create and set up an AsyncHTTPClient() here
-
-        // Using the client, perform the HTTP request
-
-        /* Uncomment me once you complete the above sections!
-        {
-            /*
-             * The onSuccess function gets called when
-             * HTTP response status is "200 OK"
-             */
-            override fun onSuccess(
-                statusCode: Int,
-                headers: Headers,
-                json: JsonHttpResponseHandler.JSON
-            ) {
-                // The wait for a response is over
-                progressBar.hide()
-
-                //TODO - Parse JSON into Models
-
-                val models : List<BestSellerBook> = null // Fix me!
-                recyclerView.adapter = BestSellerBooksRecyclerViewAdapter(models, this@BestSellerBooksFragment)
-
-                // Look for this in Logcat:
-                Log.d("BestSellerBooksFragment", "response successful")
-            }
-
-            /*
-             * The onFailure function gets called when
-             * HTTP response status is "4XX" (eg. 401, 403, 404)
-             */
-            override fun onFailure(
-                statusCode: Int,
-                headers: Headers?,
-                errorResponse: String,
-                t: Throwable?
-            ) {
-                // The wait for a response is over
-                progressBar.hide()
-
-                // If the error is not null, log it!
-                t?.message?.let {
-                    Log.e("BestSellerBooksFragment", errorResponse)
+        val client = AsyncHttpClient()
+        val params = RequestParams()
+        params["api-key"] = API_KEY
+        client[
+            "https://api.nytimes.com/svc/books/v3/lists/current/hardcover-fiction.json",
+            params,
+            object : JsonHttpResponseHandler() {
+                override fun onFailure(
+                    statusCode: Int,
+                    headers: Headers?,
+                    response: String?,
+                    throwable: Throwable?
+                ) {
+                    Log.e("BestSellerBooksFragment", "Failed to fetch books: $statusCode")
+                    progressBar.hide()
+                    throwable?.message?.let {
+                        Log.e("BestSellerBooksFragment", it)
+                    }
                 }
-            }
-        }]
-        */
 
+                override fun onSuccess(
+                    statusCode: Int,
+                    headers: Headers,
+                    json: JsonHttpResponseHandler.JSON
+                ) {
+                    // The wait for a response is over
+                    progressBar.hide()
+
+                    try {
+                        // Parsing the response
+                        val results = json.jsonObject.getJSONObject("results")
+                        val booksArray = results.getJSONArray("books")
+
+
+
+
+
+
+                        val gson = Gson()
+                        val models: List<BestSellerBook> = gson.fromJson(booksArray.toString(), Array<BestSellerBook>::class.java).toList()
+
+
+                        //print out models
+                        Log.d("BestSellerBooksFragment", "response successful: $models")
+
+                        // Set the adapter
+                        recyclerView.adapter = BestSellerBooksRecyclerViewAdapter(models, this@BestSellerBooksFragment)
+
+
+
+
+                        // Log success
+                        Log.d("BestSellerBooksFragment", "response successful")
+
+                    } catch (e: Exception) {
+                        Log.e("BestSellerBooksFragment", "Failed to parse JSON", e)
+                    }
+                }
+            }]
     }
 
     /*
