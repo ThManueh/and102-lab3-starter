@@ -2,7 +2,7 @@
 
 Course Link: [CodePath Android Course](https://courses.codepath.org/courses/and102/unit/3#!labs)
 
-Submitted by: **Enmanuel** <!-- Replace 'Your Name Here' with your actual name -->
+Submitted by: **Enmanuel Tejeda** <!-- Replace 'Your Name Here' with your actual name -->
 
 **NY Times Bestselling Books** is an app designed to display the current bestselling books based on NY Times data.
 
